@@ -50,6 +50,7 @@ public class Partie {
 	public void addMatchExmpt(Equipe equipe) {
 		Match match = new Match();
 		match.setEquipeA(equipe);
+		match.setNumeroPlaque(matchs.size() + 1);
 		matchsByEquipe.put(equipe, match);
 		matchs.add(match);
 
