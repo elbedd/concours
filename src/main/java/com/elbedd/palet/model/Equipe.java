@@ -5,27 +5,21 @@
 //
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-package com.elbedd.palet;
+package com.elbedd.palet.model;
 
-import com.elbedd.palet.model.Concours;
-import com.elbedd.palet.model.Equipe;
+public class Equipe {
+	public int numero;
 
-public class Main {
+	public Equipe() {
 
-	public static void main(String[] arg) {
-		int nbPartieQualificative = 5;
+	}
 
-		Concours concours = new Concours(nbPartieQualificative);
+	public Equipe(int numeroEquipe) {
+		this.numero = numeroEquipe;
+	}
 
-		int nbEquipe = 41;
-		for (int numEquipe = 0; numEquipe < nbEquipe; numEquipe++) {
-			Equipe equipe = new Equipe(numEquipe + 1);
-			concours.addEquipe(equipe);
-		}
-
-		concours.effectueTirageQualification();
-		concours.display();
-
+	public int getNumero() {
+		return numero;
 	}
 
 }

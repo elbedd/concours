@@ -5,27 +5,50 @@
 //
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-package com.elbedd.palet;
+package com.elbedd.palet.model;
 
-import com.elbedd.palet.model.Concours;
-import com.elbedd.palet.model.Equipe;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class Main {
+public class Concours {
 
-	public static void main(String[] arg) {
-		int nbPartieQualificative = 5;
+	private final int nbPartieQualificative;
 
-		Concours concours = new Concours(nbPartieQualificative);
+	private List<Partie> tirages;
 
-		int nbEquipe = 41;
-		for (int numEquipe = 0; numEquipe < nbEquipe; numEquipe++) {
-			Equipe equipe = new Equipe(numEquipe + 1);
-			concours.addEquipe(equipe);
+	private Map<Integer, Equipe> equipes;
+
+	public Concours(int nbPartieQualificative) {
+		this.nbPartieQualificative = nbPartieQualificative;
+		equipes = new HashMap<Integer, Equipe>();
+	}
+
+	public void effectueTirageQualification() {
+		tirages = new ArrayList<Partie>();
+		for (int i = 0; i < nbPartieQualificative; i++) {
+			Partie tirage = Partie.effectueTirage(i + 1, equipes, tirages);
+			tirage.display();
+			tirages.add(tirage);
 		}
 
-		concours.effectueTirageQualification();
-		concours.display();
+	}
 
+	public void display() {
+		for (Partie partie : tirages) {
+			partie.display();
+		}
+
+	}
+
+	public boolean addEquipe(Equipe equipe) {
+		boolean ret = false;
+		if (equipe != null) {
+			Equipe a = equipes.put(new Integer(equipe.getNumero()), equipe);
+			ret = a != null;
+		}
+		return ret;
 	}
 
 }
