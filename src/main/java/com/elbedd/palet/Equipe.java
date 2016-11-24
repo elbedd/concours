@@ -9,17 +9,17 @@ package com.elbedd.palet;
 
 public class Equipe {
 	public int numero;
-	
+
 	public Equipe() {
-	
+
 	}
-	
+
 	public Equipe(int numeroEquipe) {
 		this.numero = numeroEquipe;
 	}
-	
+
 	public int getNumero() {
 		return numero;
 	}
-	
+
 }

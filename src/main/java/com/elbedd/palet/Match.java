@@ -8,62 +8,69 @@
 package com.elbedd.palet;
 
 public class Match {
-	
+
 	private Equipe equipeA;
-	
+
 	/**
 	 * null : A exempt
 	 */
 	private Equipe equipeB;
-	
+
 	private int numeroPlaque;
-	
+
 	private int resultatA;
-	
+
 	private int resultatB;
-	
+
 	public Equipe getEquipeA() {
 		return equipeA;
 	}
+
 	public Equipe getEquipeB() {
 		return equipeB;
 	}
+
 	public int getNumeroPlaque() {
 		return numeroPlaque;
 	}
+
 	public void setNumeroPlaque(int numeroPlaque) {
 		this.numeroPlaque = numeroPlaque;
 	}
+
 	public int getResultatA() {
 		return resultatA;
 	}
+
 	public void setResultatA(int resultatA) {
 		this.resultatA = resultatA;
 	}
+
 	public int getResultatB() {
 		return resultatB;
 	}
+
 	public void setResultatB(int resultatB) {
 		this.resultatB = resultatB;
 	}
+
 	public void setEquipeA(Equipe equipeA) {
 		this.equipeA = equipeA;
 	}
+
 	public void setEquipeB(Equipe equipeB) {
 		this.equipeB = equipeB;
 	}
+
 	public boolean hasSameEquipe(Match match) {
-		return (equipeA == match.getEquipeA() ||  equipeA == match.getEquipeB())  && (equipeB == match.getEquipeA() ||  equipeB == match.getEquipeB());
-		
+		return (equipeA == match.getEquipeA() || equipeA == match.getEquipeB())
+				&& (equipeB == match.getEquipeA() || equipeB == match.getEquipeB());
+
 	}
-	
+
 	public boolean hasEquipe(Equipe equipe) {
-		return (equipeA == equipe ||  equipeB == equipe);
-		
+		return (equipeA == equipe || equipeB == equipe);
+
 	}
-	
-	
-	
-	
-	
+
 }

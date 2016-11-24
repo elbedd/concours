@@ -10,19 +10,19 @@ package com.elbedd.palet;
 public class Main {
 
 	public static void main(String[] arg) {
-		int nbPartieQualificative = 5; 
-	
+		int nbPartieQualificative = 5;
+
 		Concours concours = new Concours(nbPartieQualificative);
-		
+
 		int nbEquipe = 41;
 		for (int numEquipe = 0; numEquipe < nbEquipe; numEquipe++) {
 			Equipe equipe = new Equipe(numEquipe + 1);
 			concours.addEquipe(equipe);
 		}
-			
-		concours.effectueTirageQualification();			
+
+		concours.effectueTirageQualification();
 		concours.display();
-			
+
 	}
-	
+
 }

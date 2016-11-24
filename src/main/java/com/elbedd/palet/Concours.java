@@ -15,44 +15,40 @@ import java.util.Map;
 public class Concours {
 
 	private final int nbPartieQualificative;
-	
+
 	private List<Partie> tirages;
-	
+
 	private Map<Integer, Equipe> equipes;
-	
+
 	public Concours(int nbPartieQualificative) {
 		this.nbPartieQualificative = nbPartieQualificative;
 		equipes = new HashMap<Integer, Equipe>();
 	}
-	
-	
-	
+
 	public void effectueTirageQualification() {
 		tirages = new ArrayList<Partie>();
 		for (int i = 0; i < nbPartieQualificative; i++) {
-			Partie tirage =  Partie.effectueTirage(i+1, equipes, tirages);
+			Partie tirage = Partie.effectueTirage(i + 1, equipes, tirages);
 			tirage.display();
 			tirages.add(tirage);
 		}
-		
-		
+
 	}
-	
+
 	public void display() {
 		for (Partie partie : tirages) {
 			partie.display();
 		}
-		
-		
+
 	}
-	
+
 	public boolean addEquipe(Equipe equipe) {
 		boolean ret = false;
 		if (equipe != null) {
 			Equipe a = equipes.put(new Integer(equipe.getNumero()), equipe);
-			ret = a!=null;
+			ret = a != null;
 		}
 		return ret;
 	}
-	
+
 }
