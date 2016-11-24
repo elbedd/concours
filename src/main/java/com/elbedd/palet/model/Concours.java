@@ -16,7 +16,7 @@ public class Concours {
 
 	private final int nbPartieQualificative;
 
-	private List<Partie> tirages;
+	private List<Partie> parties;
 
 	private Map<Integer, Equipe> equipes;
 
@@ -24,19 +24,23 @@ public class Concours {
 		this.nbPartieQualificative = nbPartieQualificative;
 		equipes = new HashMap<Integer, Equipe>();
 	}
+	
+	public List<Partie> getParties() {
+		return parties;
+	}
 
 	public void effectueTirageQualification() {
-		tirages = new ArrayList<Partie>();
+		parties = new ArrayList<Partie>();
 		for (int i = 0; i < nbPartieQualificative; i++) {
-			Partie tirage = Partie.effectueTirage(i + 1, equipes, tirages);
+			Partie tirage = Partie.effectueTirage(i + 1, equipes, parties);
 			tirage.display();
-			tirages.add(tirage);
+			parties.add(tirage);
 		}
 
 	}
 
 	public void display() {
-		for (Partie partie : tirages) {
+		for (Partie partie : parties) {
 			partie.display();
 		}
 
