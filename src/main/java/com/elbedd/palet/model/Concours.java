@@ -28,6 +28,10 @@ public class Concours {
 	public List<Partie> getParties() {
 		return parties;
 	}
+	
+	public Map<Integer, Equipe> getEquipes() {
+		return equipes;
+	}
 
 	public void effectueTirageQualification() {
 		parties = new ArrayList<Partie>();
