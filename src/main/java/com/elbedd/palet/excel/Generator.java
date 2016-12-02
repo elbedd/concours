@@ -22,7 +22,9 @@ public class Generator {
 	private final static String REF_RANGE = ":";// In apachePOI ?
 	
 	private final static String SHEET_TEAM_NAME = "Equipes";
-	private final static int SHEET_TEAM_FIRSTLINE = 3; 
+	private final static int SHEET_TEAM_FIRSTLINE = 4;
+	
+	private final static int SCORE_WIN = 11; 
 	
 	
 	
@@ -60,6 +62,11 @@ public class Generator {
 			}
 		}
 		
+		
+		writeClassementQualif(wb, concours.getParties().size());
+		writeMoreInSheetEquipes(wb);
+		
+		
 
 		try (FileOutputStream out = new FileOutputStream(fileName)) {
 			wb.write(out);
@@ -68,6 +75,17 @@ public class Generator {
 			throw e;
 		}
 		wb.close();
+	}
+
+	private void writeClassementQualif(Workbook wb, int nbPartie) {
+		Sheet sheet = wb.cloneSheet(0);
+		// num sheet Equipe = 0
+		// num sheet Partie1 => 1
+		// ...
+		// num sheet classement Qualif => nbPartie+1
+		wb.setSheetName(nbPartie + 1, "ClassementQ");
+		sheet.getRow(0).getCell(2).setCellValue("Classement après " + nbPartie);
+		
 	}
 
 	protected void writeSheetPartieHeader(Sheet sheet) {
@@ -166,14 +184,125 @@ public class Generator {
 	protected void writeEquipe(Sheet sheet, Equipe equipe) {
 		Row row = sheet.createRow(SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 2);
 		
-		Cell cell = row.createCell(0, CellType.NUMERIC);
+		int numCell = 0;
+		Cell cell = row.createCell(numCell++, CellType.NUMERIC);
 		cell.setCellValue(equipe.getNumero());
 		
-		cell = row.createCell(1, CellType.STRING);
+		cell = row.createCell(numCell++, CellType.STRING);
 		cell.setCellValue("Player1 Team" + equipe.getNumero());// 1st player
 		
-		cell = row.createCell(2, CellType.STRING);
+		cell = row.createCell(numCell++, CellType.STRING);
 		cell.setCellValue("Player2 Team" + equipe.getNumero());// 2nd player
+		
+		
+		
+	}
+	
+	private void writeMoreInSheetEquipes(Workbook wb) {
+		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
+		
+		Row row = sheet.createRow(2);// Ligne 3
+		// 3 colonnes (equipe/nom1/Nom2)  + 2 colonnes par partie
+		int numCell = 3 + concours.getParties().size() * 2;
+		Cell cellEnete = row.createCell(numCell);
+		cellEnete.setCellValue("Pe Gagnée");
+		cellEnete = row.createCell(++numCell);
+		cellEnete.setCellValue("Pts Pour");
+		cellEnete = row.createCell(++numCell);
+		cellEnete.setCellValue("Pts Contre");
+		
+		for (Equipe equipe : concours.getEquipes().values()) {
+			int numLigne = SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1;	
+			row = sheet.getRow(numLigne - 1);
+			
+			numCell = 3;
+			// ajouter le résultat des parties
+			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
+				// Score équipe
+				Cell cell = row.createCell(numCell++, CellType.FORMULA);
+				String formula = searchFormulaScore(equipe, iPartie + 1);
+				cell.setCellFormula(formula.toString());
+
+				// Score adverse
+				Cell cell2 = row.createCell(numCell++, CellType.FORMULA);
+				String formula2 = searchFormulaScoreAdverse(equipe, iPartie + 1);
+				cell2.setCellFormula(formula2.toString());
+			}
+			// Faire le nombre de victoire 
+			// Si 5 partie : 
+			//  =SI(D4<11;0;1)+SI(F4<11;0;1)+SI(H4<11;0;1)+SI(J4<11;0;1)+SI(L4<11;0;1)
+			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P' };
+			int indexLettre = 3;
+			
+			StringBuilder sbWin = new StringBuilder("");
+			StringBuilder sbPour = new StringBuilder("");
+			StringBuilder sbContre = new StringBuilder("");
+			
+			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
+				sbWin.append("+IF(" + tabLettre[indexLettre] + numLigne + "<" + SCORE_WIN +",0,1)");
+				sbPour.append("+" +tabLettre[indexLettre] + numLigne);
+				indexLettre ++;
+				sbContre.append("+" +tabLettre[indexLettre] + numLigne);
+				indexLettre ++;
+			}
+			
+			
+			Cell cellWin = row.createCell(numCell++, CellType.FORMULA);
+			String formula = sbWin.substring(1);// Remove the first +
+			cellWin.setCellFormula(formula);
+			
+			Cell cellPP = row.createCell(numCell++, CellType.FORMULA);
+			formula = sbPour.substring(1);// Remove the first +
+			cellPP.setCellFormula(formula);
+			
+			Cell cellPC = row.createCell(numCell++, CellType.FORMULA);
+			formula = sbContre.substring(1);// Remove the first +
+			cellPC.setCellFormula(formula);
+			
+			
+		}
+		
+		
+	}
+	
+	
+	
+	protected String searchFormulaScore(Equipe equipe, int numPartie) {
+		StringBuilder formula = new StringBuilder("");
+		String cellSearched = "A" + (SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1); 
+		// =SI(ESTNA(RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX));RECHERCHEV($A4;Partie1!$D$2:$G$22;4;FAUX);RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX))
+		// 
+		String rechercheEquipe1 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$B$2:$G$22,5,FALSE)";
+		String rechercheEquipe2 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$D$2:$G$22,4,FALSE)";
+		formula.append("IF(");
+		// COND
+		formula.append("ISNA(" + rechercheEquipe1 + "),");
+		// THEN
+		formula.append(rechercheEquipe2 + ",");
+		// ELSE
+		formula.append(rechercheEquipe1);
+		formula.append(")"); // END IF
+		
+		return formula.toString();
+	}
+	
+	protected String searchFormulaScoreAdverse(Equipe equipe, int numPartie) {
+		StringBuilder formula = new StringBuilder("");
+		String cellSearched = "A" + (SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1); 
+		// =SI(ESTNA(RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX));RECHERCHEV($A4;Partie1!$D$2:$G$22;4;FAUX);RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX))
+		// 
+		String rechercheEquipe1 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$B$2:$G$22,6,FALSE)";
+		String rechercheEquipe2 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$D$2:$G$22,3,FALSE)";
+		formula.append("IF(");
+		// COND
+		formula.append("ISNA(" + rechercheEquipe1 + "),");
+		// THEN
+		formula.append(rechercheEquipe2 + ",");
+		// ELSE
+		formula.append(rechercheEquipe1);
+		formula.append(")"); // END IF
+		
+		return formula.toString();
 	}
 
 }
