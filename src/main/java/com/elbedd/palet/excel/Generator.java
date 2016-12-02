@@ -63,7 +63,7 @@ public class Generator {
 		}
 		
 		
-		writeClassementQualif(wb, concours.getParties().size());
+		writeClassementQualif(wb, concours.getParties().size(), plageEquipe, styleJoueurEquipe);
 		writeMoreInSheetEquipes(wb);
 		
 		
@@ -77,14 +77,20 @@ public class Generator {
 		wb.close();
 	}
 
-	private void writeClassementQualif(Workbook wb, int nbPartie) {
+	private void writeClassementQualif(Workbook wb, int nbPartie, String plageEquipe, CellStyle styleJoueurEquipe) {
 		Sheet sheet = wb.cloneSheet(0);
 		// num sheet Equipe = 0
 		// num sheet Partie1 => 1
 		// ...
 		// num sheet classement Qualif => nbPartie+1
-		wb.setSheetName(nbPartie + 1, "ClassementQ");
+		wb.setSheetName(nbPartie + 1, "ClassementQualif");
 		sheet.getRow(0).getCell(2).setCellValue("Classement après " + nbPartie);
+		
+		// 
+		for (Equipe equipe : concours.getEquipes().values()) {
+			writeClassementEquipe(sheet, equipe, plageEquipe, styleJoueurEquipe);
+		}
+		
 		
 	}
 
@@ -122,9 +128,8 @@ public class Generator {
 
 		cell = row.createCell(i++, CellType.FORMULA);
 		//cell.setCellFormula("VLOOKUP(" + match.getEquipeA().getNumero() + ",A3:C43,3,FALSE)");
-		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell);
+		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell, styleJoueurEquipe);
 		
-		cell.setCellStyle(styleJoueurEquipe);
 		
 
 		if (match.getEquipeB() != null) {
@@ -134,14 +139,13 @@ public class Generator {
 
 			cell = row.createCell(i++, CellType.STRING);
 			cell.setCellValue("Noms Equipe 2");
-			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell);
-			cell.setCellStyle(styleJoueurEquipe);
+			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell, styleJoueurEquipe);
 			
 		}
 		
 	}
 
-	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell) {
+	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell, CellStyle styleJoueurEquipe) {
 		StringBuilder formula = new StringBuilder("CONCATENATE(");
 		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",2,FALSE)");//First Player
 		formula.append(",");//SEP CONCAT
@@ -149,9 +153,9 @@ public class Generator {
 		formula.append(",");//SEP CONCAT
 		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",3,FALSE)");//2nd Player (colonne 3)
 		formula.append(")");//END CONCAT
-			
 		
 		cell.setCellFormula(formula.toString());
+		cell.setCellStyle(styleJoueurEquipe);
 	}
 
 	protected void writeSheetEquipes(Workbook wb) {
@@ -193,6 +197,22 @@ public class Generator {
 		
 		cell = row.createCell(numCell++, CellType.STRING);
 		cell.setCellValue("Player2 Team" + equipe.getNumero());// 2nd player
+		
+	}
+	
+	protected void writeClassementEquipe(Sheet sheet, Equipe equipe, String plageEquipe, CellStyle styleJoueurEquipe) {
+		Row row = sheet.getRow(SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 2);
+		row.setHeight((short) (row.getHeight() * 2)); 
+		
+		int numCell = 1;
+		// Dans cette cellule, remplacer le nom du joueur 1 par le nom de l'équipe
+		Cell cell = row.getCell(numCell++);
+		cell.setCellValue(equipe.getNumero());
+		// Remplacer le nom du joueur 2 par jouer1+2
+		cell = row.getCell(numCell);
+		row.removeCell(cell);
+		cell = row.createCell(numCell, CellType.FORMULA);
+		searchFormulaTeamNames(equipe, plageEquipe, cell, styleJoueurEquipe);
 		
 		
 		
