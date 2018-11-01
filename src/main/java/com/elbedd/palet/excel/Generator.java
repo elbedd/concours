@@ -1,18 +1,16 @@
 package com.elbedd.palet.excel;
 
 import java.io.FileOutputStream;
+import java.io.InputStream;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.FillPatternType;
-
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+
 import com.elbedd.palet.model.Concours;
 import com.elbedd.palet.model.Equipe;
 import com.elbedd.palet.model.Match;
@@ -31,32 +29,27 @@ public class Generator {
 	
 	private final static int SCORE_WIN = 11; 
 	
-	private static CellStyle grayStyleSheet;
-	
-	private static CellStyle verticalCellStyleSheet;
-	
 	Concours concours;
 
 	public Generator(Concours concours) {
 		this.concours = concours;
 	}
 	
-	
-	private static void setGrayStyleSheetFromWb(Workbook workbook) {
-		grayStyleSheet = workbook.createCellStyle();
-		
-		//s.setFillBackgroundColor(IndexedColors.YELLOW.getIndex());
-		grayStyleSheet.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-		grayStyleSheet.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-		grayStyleSheet.setVerticalAlignment(VerticalAlignment.JUSTIFY);
+	private Workbook loadModeleExcel() {
+		Workbook ret = null;
+		try {
+			// src/main/resources/com/elbedd/palet/excel
+			InputStream is = getClass().getResourceAsStream("modele.xls");
+			ret = new HSSFWorkbook(is);
+			
+		} catch(Exception e) {
+			// Exception : Fichier modèle non chargé 
+			ret = new HSSFWorkbook();
+		} finally {
+			
+		}
+		return ret;
 	}
-	
-	
-	private static void setVerticalStyleSheetFromWb(Workbook workbook) {
-		verticalCellStyleSheet = workbook.createCellStyle();
-		verticalCellStyleSheet.setVerticalAlignment(VerticalAlignment.JUSTIFY);
-	}
-	
 	/**
 	 * TODO : review Exception
 	 * 
@@ -64,31 +57,33 @@ public class Generator {
 	 * @throws Exception
 	 */
 	public void generateExcel(String fileName) throws Exception {
-		Workbook wb = new HSSFWorkbook();
-		setGrayStyleSheetFromWb(wb);
-		setVerticalStyleSheetFromWb(wb);
+		Workbook wb = loadModeleExcel();
+		
+		//setGrayStyleSheetFromWb(wb);
+		//setVerticalStyleSheetFromWb(wb);
 		writeSheetEquipes(wb);
 		
-		String referenceStart = SHEET_TEAM_NAME + REF_SHEET + "A" + SHEET_TEAM_FIRSTLINE;
-		int lastLine = SHEET_TEAM_FIRSTLINE + concours.getEquipes().size() - 1;
+		String referenceStart = SHEET_TEAM_NAME + REF_SHEET + "A" + (SHEET_TEAM_FIRSTLINE + 1);
+		int lastLine = SHEET_TEAM_FIRSTLINE + concours.getEquipes().size();
 		String referenceEnd = "C" + lastLine;
 		String plageEquipe = referenceStart + REF_RANGE + referenceEnd;//"Equipes!A3:C43";
 		
-		
 		for (Partie partie : concours.getParties()) {
-			Sheet sheet = wb.createSheet("Partie" + partie.getNumero());
+			//wb.createSheet("Partie" + partie.getNumero());
+			Sheet sheet = wb.cloneSheet(1);
+			wb.setSheetName(wb.getSheetIndex(sheet), "Partie" + partie.getNumero());
+			
+			
 			writeSheetPartieHeader(sheet, partie);
 
 			for (Match match : partie.getMatchs()) {
 				writeSheetPartieMatch(sheet, match, plageEquipe);
 			}
 		}
-		
-		
-		writeClassementQualif(wb, concours.getParties().size(), plageEquipe);
+		wb.removeSheetAt(1);
+		wb.setSheetOrder("ClassementQualif", wb.getNumberOfSheets()-1);
 		writeMoreInSheetEquipes(wb);
-		
-		
+		wb.setActiveSheet(0);
 
 		try (FileOutputStream out = new FileOutputStream(fileName)) {
 			wb.write(out);
@@ -99,89 +94,73 @@ public class Generator {
 		wb.close();
 	}
 
-	private void writeClassementQualif(Workbook wb, int nbPartie, String plageEquipe) {
-		Sheet sheet = wb.cloneSheet(0);
-		// num sheet Equipe = 0
-		// num sheet Partie1 => 1
-		// ...
-		// num sheet classement Qualif => nbPartie+1
-		wb.setSheetName(nbPartie + 1, "ClassementQualif");
-		sheet.getRow(0).getCell(2).setCellValue("Classement après " + nbPartie);
-		
-		// 
-		for (Equipe equipe : concours.getEquipes().values()) {
-			writeClassementEquipe(sheet, equipe, plageEquipe);
-		}
-		
-		
-	}
-
 	protected void writeSheetPartieHeader(Sheet sheet, Partie partie) {
-		Row row = sheet.createRow(0);
+		Row row = Util.getOrCreateRow(sheet, 0);
 		
-		Cell cell = row.createCell(2, CellType.STRING);
+		Cell cell = Util.getOrCreateCell(row, 2);
 		cell.setCellValue("Partie n°" + partie.getNumero());
 		
 		
-		row = sheet.createRow(1);
-		
-		int i = -1;
-		cell = row.createCell(++i, CellType.STRING);
-		cell.setCellValue("Plaque");
-		
-		cell = row.createCell(++i, CellType.STRING);
-		cell.setCellValue("Equipe 1");
-		
-		cell = row.createCell(++i, CellType.STRING);
-		cell.setCellValue("Noms Equipe 1");
-		sheet.setColumnWidth(i, (short) (sheet.getColumnWidth(i) * 3));
-		
-		cell = row.createCell(++i, CellType.STRING);
-		cell.setCellValue("Equipe 2");
-		
-		cell = row.createCell(++i, CellType.STRING);
-		cell.setCellValue("Noms Equipe 2");
-		sheet.setColumnWidth(i, (short) (sheet.getColumnWidth(i) * 3));
 	}
 	
 	protected void writeSheetPartieMatch(Sheet sheet, Match match, String rangeEquipe) {
-		Row row = sheet.createRow(match.getNumeroPlaque() + 1);
-		row.setHeight((short) (row.getHeight() * 2)); 
-		
-		CellStyle styleRow = null;
-		if (match.getNumeroPlaque() % 2 == 0) {
-			styleRow = grayStyleSheet;
+		int numRow = match.getNumeroPlaque() + 1;
+		Row row = Util.getOrCreateRow(sheet, numRow);
+		 
+		Row rowModel = null;
+		//CellStyle styleRow = null;
+		if (match.getNumeroPlaque() % 2 == 1) {
+			rowModel = Util.getOrCreateRow(sheet, 2);
 		} else {
-			styleRow = verticalCellStyleSheet;
+			rowModel = Util.getOrCreateRow(sheet, 3);
 		}
+		
+		//row.setRowStyle(rowModel.getRowStyle());
+		row.setHeight(rowModel.getHeight());
 		
 		int i = 0;
-		Cell cell = row.createCell(i++, CellType.STRING);
+		
+		Cell cell = Util.getOrCreateCell(row, i);
 		cell.setCellValue(match.getNumeroPlaque());
-		cell.setCellStyle(styleRow);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
-		cell = row.createCell(i++, CellType.NUMERIC);
+		i++;
+		cell = Util.getOrCreateCell(row, i);
 		cell.setCellValue(match.getEquipeA().getNumero());
-		cell.setCellStyle(styleRow);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
-		cell = row.createCell(i++, CellType.FORMULA);
+		i++;
+		cell = Util.getOrCreateCell(row, i);//row.createCell(i++, CellType.FORMULA);
 		//cell.setCellFormula("VLOOKUP(" + match.getEquipeA().getNumero() + ",A3:C43,3,FALSE)");
+		cell.setCellType(CellType.FORMULA);
 		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell);
-		cell.setCellStyle(styleRow);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
-		
-
+		i++;
+		cell = Util.getOrCreateCell(row, i);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		if (match.getEquipeB() != null) {
 			// Non exempt
-			cell = row.createCell(i++, CellType.NUMERIC);
 			cell.setCellValue(match.getEquipeB().getNumero());
-			cell.setCellStyle(styleRow);
-			
-			cell = row.createCell(i++, CellType.FORMULA);
-			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell);
-			cell.setCellStyle(styleRow);
-			
 		}
+		
+		i++;
+		cell = Util.getOrCreateCell(row, i);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
+		if (match.getEquipeB() != null) {
+			// Non exempt
+			
+			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell);
+		}
+		
+		// Score (vide)
+		i++;
+		cell = Util.getOrCreateCell(row, i);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
+		i++;
+		cell = Util.getOrCreateCell(row, i);
+		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
+		
 		
 	}
 
@@ -198,43 +177,32 @@ public class Generator {
 	}
 
 	protected void writeSheetEquipes(Workbook wb) {
-		Sheet sheet = wb.createSheet(SHEET_TEAM_NAME);
-		Row row = sheet.createRow(0);
+		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
+		Row row = Util.getOrCreateRow(sheet, 0);
 		
-		Cell cell = row.createCell(0, CellType.STRING);
-		cell.setCellValue("Concours");
-		
-		cell = row.createCell(2, CellType.NUMERIC);
+		Cell cell = Util.getOrCreateCell(row, 2);
 		cell.setCellValue(concours.getParties().size());
-		
-		cell = row.createCell(3, CellType.STRING);
-		cell.setCellValue("parties qualificatives");
 		
 		for (Equipe equipe : concours.getEquipes().values()) {
 			writeEquipe(sheet, equipe);
 		}
-		
-		/*Name namedCell = wb.createName();
-		namedCell.setNameName("EquipeRange");
-		String referenceStart = SHEET_TEAM_NAME + REF_SHEET + "A" + SHEET_TEAM_FIRSTLINE;
-		int lastLine = SHEET_TEAM_FIRSTLINE + concours.getEquipes().size() - 1;
-		String referenceEnd = "C" + lastLine;
-		System.out.println(referenceStart + REF_RANGE + referenceEnd);
-		namedCell.setRefersToFormula(referenceStart + REF_RANGE + referenceEnd);*/
-		
+
 	}
 	
+	
+	
 	protected void writeEquipe(Sheet sheet, Equipe equipe) {
-		Row row = sheet.createRow(SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 2);
+		// -1 =  -2 + 1 (+1 => On ajoute la ligne modele)
+		Row row = Util.getOrCreateRow(sheet, SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1);
 		
 		int numCell = 0;
-		Cell cell = row.createCell(numCell++, CellType.NUMERIC);
+		Cell cell = Util.getOrCreateCell(row, numCell++);
 		cell.setCellValue(equipe.getNumero());
 		
-		cell = row.createCell(numCell++, CellType.STRING);
+		cell = Util.getOrCreateCell(row, numCell++);
 		cell.setCellValue("Player1 Team" + equipe.getNumero());// 1st player
 		
-		cell = row.createCell(numCell++, CellType.STRING);
+		cell = Util.getOrCreateCell(row, numCell++);
 		cell.setCellValue("Player2 Team" + equipe.getNumero());// 2nd player
 		
 	}
@@ -251,7 +219,7 @@ public class Generator {
 		row.removeCell(cell);
 		cell = row.createCell(numCell, CellType.FORMULA);
 		searchFormulaTeamNames(equipe, plageEquipe, cell);
-		cell.setCellStyle(verticalCellStyleSheet);
+		//cell.setCellStyle(verticalCellStyleSheet);
 		
 		
 	}
@@ -259,32 +227,32 @@ public class Generator {
 	private void writeMoreInSheetEquipes(Workbook wb) {
 		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
 		
-		Row row = sheet.createRow(2);// Ligne 3
-		// 3 colonnes (equipe/nom1/Nom2)  + 2 colonnes par partie
-		int numCell = 3 + concours.getParties().size() * 2;
-		Cell cellEnete = row.createCell(numCell);
-		cellEnete.setCellValue("Pe Gagnée");
-		cellEnete = row.createCell(++numCell);
-		cellEnete.setCellValue("Pts Pour");
-		cellEnete = row.createCell(++numCell);
-		cellEnete.setCellValue("Pts Contre");
+		// On recopie la ligne 3 de l'excel en ajustant de 6 à nbPartie.
+		
+		Row rowModel = Util.getOrCreateRow(sheet, 2);// Ligne 3
+		Row rowHeader = writeHeaderInSheetEquipe(sheet, rowModel);
+		sheet.removeRow(rowModel);
 		
 		for (Equipe equipe : concours.getEquipes().values()) {
-			int numLigne = SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1;	
-			row = sheet.getRow(numLigne - 1);
+			int numLigne = SHEET_TEAM_FIRSTLINE + equipe.getNumero();	
+			Row row = sheet.getRow(numLigne - 1);
 			
-			numCell = 3;
+			int numCell = 3;
 			// ajouter le résultat des parties
 			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
 				// Score équipe
 				Cell cell = row.createCell(numCell++, CellType.FORMULA);
+				cell.setCellType(CellType.FORMULA);
 				String formula = searchFormulaScore(equipe, iPartie + 1);
-				cell.setCellFormula(formula.toString());
-
+				cell.setCellFormula(formula.toString()); 
+				cell.setCellStyle(rowHeader.getCell(cell.getColumnIndex()).getCellStyle());
+   
 				// Score adverse
 				Cell cell2 = row.createCell(numCell++, CellType.FORMULA);
 				String formula2 = searchFormulaScoreAdverse(equipe, iPartie + 1);
+				cell2.setCellType(CellType.FORMULA);
 				cell2.setCellFormula(formula2.toString());
+				cell2.setCellStyle(rowHeader.getCell(cell2.getColumnIndex()).getCellStyle());
 			}
 			// Faire le nombre de victoire 
 			// Si 5 partie : 
@@ -308,19 +276,67 @@ public class Generator {
 			Cell cellWin = row.createCell(numCell++, CellType.FORMULA);
 			String formula = sbWin.substring(1);// Remove the first +
 			cellWin.setCellFormula(formula);
+			cellWin.setCellStyle(rowHeader.getCell(cellWin.getColumnIndex()).getCellStyle());
 			
 			Cell cellPP = row.createCell(numCell++, CellType.FORMULA);
 			formula = sbPour.substring(1);// Remove the first +
 			cellPP.setCellFormula(formula);
+			cellPP.setCellStyle(rowHeader.getCell(cellPP.getColumnIndex()).getCellStyle());
 			
 			Cell cellPC = row.createCell(numCell++, CellType.FORMULA);
 			formula = sbContre.substring(1);// Remove the first +
 			cellPC.setCellFormula(formula);
+			cellPC.setCellStyle(rowHeader.getCell(cellPC.getColumnIndex()).getCellStyle());
 			
 			
 		}
 		
+	}
+
+	/**
+	 *
+	 * @param sheet
+	 * @return
+	 */
+	private Row writeHeaderInSheetEquipe(Sheet sheet, Row rowModel) {
+		// 3 colonnes (equipe/nom1/Nom2)  + 2 colonnes par partie
+		int numCellSum = 3 + concours.getParties().size() * 2;
 		
+		Row row = sheet.createRow(rowModel.getRowNum()+1);
+		row.setHeight(rowModel.getHeight());
+		for (int numCell = 0; numCell < 3; numCell++) {
+			Cell cellEntete = row.createCell(numCell);
+			cellEntete.setCellValue(Util.getOrCreateCell(rowModel, numCell).getStringCellValue());
+			cellEntete.setCellStyle(rowModel.getCell(numCell).getCellStyle());
+		}
+		
+		// Les parties (cellules fusionnées)
+		// 
+		for (int numPartie = 0; numPartie < concours.getParties().size(); numPartie++) {
+			sheet.addMergedRegion(new CellRangeAddress(row.getRowNum(),row.getRowNum(),3 + numPartie * 2 ,3 + numPartie * 2 + 1));
+			Cell cellEntete1 = row.createCell(3 + numPartie * 2);
+			Cell cellEntete2 = row.createCell(cellEntete1.getColumnIndex() + 1);
+			cellEntete1.setCellValue("Partie " + (numPartie + 1));
+			if (numPartie % 2 == 0) {
+				cellEntete1.setCellStyle(rowModel.getCell(3).getCellStyle());
+				cellEntete2.setCellStyle(rowModel.getCell(4).getCellStyle());	
+			} else {
+				cellEntete1.setCellStyle(rowModel.getCell(5).getCellStyle());
+				cellEntete2.setCellStyle(rowModel.getCell(6).getCellStyle());	
+			}
+		}
+		
+		// Les totaux
+		// la feuille modele à 6 partie
+		int firstIndexCellInRowModel = 3 + 6 * 2;;
+		for (int numCell = 0; numCell < 3; numCell++) {
+			Cell cellEntete = row.createCell(numCellSum + numCell);
+			Cell cellModel = Util.getOrCreateCell(rowModel, firstIndexCellInRowModel + numCell);
+			cellEntete.setCellValue(cellModel.getStringCellValue());
+			cellEntete.setCellStyle(cellModel.getCellStyle());
+		}
+		
+		return row;
 	}
 	
 	
@@ -335,12 +351,13 @@ public class Generator {
 	
 	protected String searchFormulaScore(Equipe equipe, int numPartie, int colonneScore1, int colonneScore2) {
 		StringBuilder formula = new StringBuilder("");
-		String cellSearched = "A" + (SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 1); 
+		// SHEET_TEAM_FIRSTLINE + 1 => Duplication de la ligne d'entete
+		String cellSearched = "A" + (SHEET_TEAM_FIRSTLINE + equipe.getNumero()); 
 		// =SI(ESTNA(RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX));RECHERCHEV($A4;Partie1!$D$2:$G$22;4;FAUX);RECHERCHEV($A4;Partie1!$B$2:$G$22;5;FAUX))
 		// 
 		int nbMatch = concours.getEquipes().size() / 2;
-		String rechercheEquipe1 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$B$"+SHEET_PARTIE_FIRSTLINE+":$G$"+(SHEET_PARTIE_FIRSTLINE + nbMatch)+","+colonneScore1+",FALSE)";
-		String rechercheEquipe2 = "RECHERCHEV(" + cellSearched + ",Partie" + numPartie + "!$D$"+SHEET_PARTIE_FIRSTLINE+":$G$"+(SHEET_PARTIE_FIRSTLINE + nbMatch)+","+colonneScore2+",FALSE)";
+		String rechercheEquipe1 = "VLOOKUP(" + cellSearched + ",Partie" + numPartie + "!$B$"+SHEET_PARTIE_FIRSTLINE+":$G$"+(SHEET_PARTIE_FIRSTLINE + nbMatch)+","+colonneScore1+",FALSE)";
+		String rechercheEquipe2 = "VLOOKUP(" + cellSearched + ",Partie" + numPartie + "!$D$"+SHEET_PARTIE_FIRSTLINE+":$G$"+(SHEET_PARTIE_FIRSTLINE + nbMatch)+","+colonneScore2+",FALSE)";
 		formula.append("IF(");
 		// COND
 		formula.append("ISNA(" + rechercheEquipe1 + "),");
