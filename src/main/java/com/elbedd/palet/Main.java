@@ -16,24 +16,32 @@ public class Main {
 	public static void main(String[] arg) {
 		int nbPartieQualificative = 5;
 
-		Concours concours = new Concours(nbPartieQualificative);
-
-		int nbEquipe = 41;
-		for (int numEquipe = 0; numEquipe < nbEquipe; numEquipe++) {
-			Equipe equipe = new Equipe(numEquipe + 1);
-			concours.addEquipe(equipe);
-		}
-
-		concours.effectueTirageQualification();
-		//concours.display();
-		Generator generator = new Generator(concours);
+		int nbEquipeMin = 8;
+		int nbEquipeMax = 15;
 		
-		// enregistrer dans un XLS
-		try {
-			generator.generateExcel("d:/temp/myExcel.xls");	
-		} catch(Exception e) {
-			e.printStackTrace();
+		for (int nbEquipe = nbEquipeMin; nbEquipe <= nbEquipeMax; nbEquipe++) {
+			Concours concours = new Concours(nbPartieQualificative);
+
+			for (int numEquipe = 0; numEquipe < nbEquipe; numEquipe++) {
+				Equipe equipe = new Equipe(numEquipe + 1);
+				concours.addEquipe(equipe);
+			}
+
+			concours.effectueTirageQualification();
+			//concours.display();
+			Generator generator = new Generator(concours);
+			
+			String numExcel = "000" + nbEquipe;
+			numExcel = numExcel.substring(numExcel.length() - 3, numExcel.length());
+			// enregistrer dans un XLS
+			try {
+				generator.generateExcel("d:/temp/tirage/tirage" + numExcel + ".xls");
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
+		
+		
 		
 
 	}
