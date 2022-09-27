@@ -141,7 +141,7 @@ public class Generator {
 		cell = Util.getOrCreateCell(row, i);//row.createCell(i++, CellType.FORMULA);
 		//cell.setCellFormula("VLOOKUP(" + match.getEquipeA().getNumero() + ",A3:C43,3,FALSE)");
 		cell.setCellType(CellType.FORMULA);
-		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell);
+		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell, "B");
 		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
 		i++;
@@ -157,8 +157,7 @@ public class Generator {
 		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		if (match.getEquipeB() != null) {
 			// Non exempt
-			
-			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell);
+			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell, "D");
 		}
 		
 		// Score (vide)
@@ -172,13 +171,14 @@ public class Generator {
 		
 	}
 
-	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell) {
+	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell, String columnNumEquipe) {
 		StringBuilder formula = new StringBuilder("CONCATENATE(");
-		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",2,FALSE)");//First Player
+		int rowFormula = cell.getRow().getRowNum() + 1;
+		formula.append("VLOOKUP(" + columnNumEquipe + rowFormula + ", "+ rangeEquipe +",2,FALSE)");//First Player
 		formula.append(",");//SEP CONCAT
 		formula.append("CHAR(10)");//Retour Chariot
 		formula.append(",");//SEP CONCAT
-		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",3,FALSE)");//2nd Player (colonne 3)
+		formula.append("VLOOKUP(" + columnNumEquipe + rowFormula  + ", "+ rangeEquipe +",3,FALSE)");//2nd Player (colonne 3)
 		formula.append(")");//END CONCAT
 		
 		cell.setCellFormula(formula.toString());
@@ -226,7 +226,7 @@ public class Generator {
 		cell = row.getCell(numCell);
 		row.removeCell(cell);
 		cell = row.createCell(numCell, CellType.FORMULA);
-		searchFormulaTeamNames(equipe, plageEquipe, cell);
+		searchFormulaTeamNames(equipe, plageEquipe, cell, "A");
 		//cell.setCellStyle(verticalCellStyleSheet);
 		
 		
@@ -265,7 +265,7 @@ public class Generator {
 			// Faire le nombre de victoire 
 			// Si 5 partie : 
 			//  =SI(D4<11;0;1)+SI(F4<11;0;1)+SI(H4<11;0;1)+SI(J4<11;0;1)+SI(L4<11;0;1)
-			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P' };
+			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P','Q','R' };
 			int indexLettre = 3;
 			
 			StringBuilder sbWin = new StringBuilder("");
