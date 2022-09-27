@@ -51,7 +51,7 @@ public class Generator {
 			ret = new HSSFWorkbook(is);
 			
 		} catch(Exception e) {
-			// Exception : Fichier modèle non chargé 
+			// Exception : Fichier modÃ¨le non chargÃ© 
 			ret = new HSSFWorkbook();
 		} finally {
 			
@@ -106,7 +106,7 @@ public class Generator {
 		Row row = Util.getOrCreateRow(sheet, 0);
 		
 		Cell cell = Util.getOrCreateCell(row, 2);
-		cell.setCellValue("Partie n°" + partie.getNumero());
+		cell.setCellValue("Partie nÂ°" + partie.getNumero());
 		
 		
 	}
@@ -141,7 +141,7 @@ public class Generator {
 		cell = Util.getOrCreateCell(row, i);//row.createCell(i++, CellType.FORMULA);
 		//cell.setCellFormula("VLOOKUP(" + match.getEquipeA().getNumero() + ",A3:C43,3,FALSE)");
 		cell.setCellType(CellType.FORMULA);
-		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell);
+		searchFormulaTeamNames(match.getEquipeA(), rangeEquipe, cell, "B");
 		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
 		i++;
@@ -157,8 +157,7 @@ public class Generator {
 		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		if (match.getEquipeB() != null) {
 			// Non exempt
-			
-			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell);
+			searchFormulaTeamNames(match.getEquipeB(), rangeEquipe, cell, "D");
 		}
 		
 		// Score (vide)
@@ -172,13 +171,14 @@ public class Generator {
 		
 	}
 
-	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell) {
+	protected void searchFormulaTeamNames(Equipe equipe, String rangeEquipe, Cell cell, String columnNumEquipe) {
 		StringBuilder formula = new StringBuilder("CONCATENATE(");
-		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",2,FALSE)");//First Player
+		int rowFormula = cell.getRow().getRowNum() + 1;
+		formula.append("VLOOKUP(" + columnNumEquipe + rowFormula + ", "+ rangeEquipe +",2,FALSE)");//First Player
 		formula.append(",");//SEP CONCAT
 		formula.append("CHAR(10)");//Retour Chariot
 		formula.append(",");//SEP CONCAT
-		formula.append("VLOOKUP(" + equipe.getNumero() + ", "+ rangeEquipe +",3,FALSE)");//2nd Player (colonne 3)
+		formula.append("VLOOKUP(" + columnNumEquipe + rowFormula  + ", "+ rangeEquipe +",3,FALSE)");//2nd Player (colonne 3)
 		formula.append(")");//END CONCAT
 		
 		cell.setCellFormula(formula.toString());
@@ -219,14 +219,14 @@ public class Generator {
 		Row row = sheet.getRow(SHEET_TEAM_FIRSTLINE + equipe.getNumero() - 2);
 		row.setHeight((short) (row.getHeight() * 2)); 
 		int numCell = 1;
-		// Dans cette cellule, remplacer le nom du joueur 1 par le nom de l'équipe
+		// Dans cette cellule, remplacer le nom du joueur 1 par le nom de l'Ã©quipe
 		Cell cell = row.getCell(numCell++);
 		cell.setCellValue(equipe.getNumero());
 		// Remplacer le nom du joueur 2 par jouer1+2
 		cell = row.getCell(numCell);
 		row.removeCell(cell);
 		cell = row.createCell(numCell, CellType.FORMULA);
-		searchFormulaTeamNames(equipe, plageEquipe, cell);
+		searchFormulaTeamNames(equipe, plageEquipe, cell, "A");
 		//cell.setCellStyle(verticalCellStyleSheet);
 		
 		
@@ -235,7 +235,7 @@ public class Generator {
 	private void writeMoreInSheetEquipes(Workbook wb) {
 		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
 		
-		// On recopie la ligne 3 de l'excel en ajustant de 6 à nbPartie.
+		// On recopie la ligne 3 de l'excel en ajustant de 6 Ã  nbPartie.
 		
 		Row rowModel = Util.getOrCreateRow(sheet, 2);// Ligne 3
 		Row rowHeader = writeHeaderInSheetEquipe(sheet, rowModel);
@@ -246,9 +246,9 @@ public class Generator {
 			Row row = sheet.getRow(numLigne - 1);
 			
 			int numCell = 3;
-			// ajouter le résultat des parties
+			// ajouter le rÃ©sultat des parties
 			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
-				// Score équipe
+				// Score Ã©quipe
 				Cell cell = row.createCell(numCell++, CellType.FORMULA);
 				cell.setCellType(CellType.FORMULA);
 				String formula = searchFormulaScore(equipe, iPartie + 1);
@@ -265,7 +265,7 @@ public class Generator {
 			// Faire le nombre de victoire 
 			// Si 5 partie : 
 			//  =SI(D4<11;0;1)+SI(F4<11;0;1)+SI(H4<11;0;1)+SI(J4<11;0;1)+SI(L4<11;0;1)
-			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P' };
+			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P','Q','R' };
 			int indexLettre = 3;
 			
 			StringBuilder sbWin = new StringBuilder("");
@@ -318,7 +318,7 @@ public class Generator {
 			cellEntete.setCellStyle(rowModel.getCell(numCell).getCellStyle());
 		}
 		
-		// Les parties (cellules fusionnées)
+		// Les parties (cellules fusionnÃ©es)
 		// 
 		for (int numPartie = 0; numPartie < concours.getParties().size(); numPartie++) {
 			sheet.addMergedRegion(new CellRangeAddress(row.getRowNum(),row.getRowNum(),3 + numPartie * 2 ,3 + numPartie * 2 + 1));
@@ -335,7 +335,7 @@ public class Generator {
 		}
 		
 		// Les totaux
-		// la feuille modele à 6 partie
+		// la feuille modele Ã  6 partie
 		int firstIndexCellInRowModel = 3 + 6 * 2;;
 		for (int numCell = 0; numCell < 3; numCell++) {
 			Cell cellEntete = row.createCell(numCellSum + numCell);
