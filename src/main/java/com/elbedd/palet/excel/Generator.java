@@ -1,5 +1,5 @@
 // The MIT License (MIT)
-// Copyright (c) 2016-2018 Laurent BRAUD
+// Copyright (c) 2016-2024 Laurent BRAUD
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //
@@ -30,7 +30,11 @@ public class Generator {
 	private final static String REF_RANGE = ":";// In apachePOI ?
 	
 	private final static String SHEET_TEAM_NAME = "Equipes";
+	private final static int SHEET_TEAM_NUMBER = 1;
+	
 	private final static String SHEET_PARTIE_NAME = "Partie";
+	private final static int SHEET_PARTIE_NUMBER = 2;
+	
 	private final static String SHEET_CLASSEMENT = "Clt";
 	
 	private final static int SHEET_TEAM_FIRSTLINE = 4;
@@ -103,14 +107,14 @@ public class Generator {
 			plageEquipeName = computeTeamRange("B", "D", concours.getEquipes().size());
 		} else {
 			plageEquipeName = computeTeamRange("A", "C", concours.getEquipes().size());
-			// W : 6 match (Colonne 6 + 6*2 match +3)
-			plageEquipeAdverse = computeTeamRange("A", "W", concours.getEquipes().size());
+			// W : 6 match (Colonne 6 + 6*2 match +4)
+			plageEquipeAdverse = computeTeamRange("A", "X", concours.getEquipes().size());
 		}
 		
 		
 		for (Partie partie : concours.getParties()) {
 			//wb.createSheet("Partie" + partie.getNumero());
-			Sheet sheet = wb.cloneSheet(1);
+			Sheet sheet = wb.cloneSheet(SHEET_PARTIE_NUMBER);
 			wb.setSheetName(wb.getSheetIndex(sheet), SHEET_PARTIE_NAME + partie.getNumero());
 			writeSheetPartieHeader(sheet, partie);
 
@@ -121,16 +125,14 @@ public class Generator {
 			
 			
 		}
-		wb.removeSheetAt(1);
+		wb.removeSheetAt(SHEET_PARTIE_NUMBER);
 		
-		if (!tableauFinale) {
-			wb.setSheetOrder("ClassementQualif", wb.getNumberOfSheets() - 1);
-		}
+		
 		writeMoreInSheetEquipes(wb, withClassementIntermediaire);
-		
+
 		if (withClassementIntermediaire) {
 			for (Partie partie : concours.getParties()) {
-				Sheet classementI = wb.cloneSheet(0);
+				Sheet classementI = wb.cloneSheet(SHEET_TEAM_NUMBER);
 				String sheetClassement = SHEET_CLASSEMENT + partie.getNumero();
 				wb.setSheetName(wb.getSheetIndex(classementI), sheetClassement);
 				// pose problème car change formule de Sheet 1.
@@ -164,7 +166,7 @@ public class Generator {
 			
 		}
 		
-		wb.setActiveSheet(0);
+		wb.setActiveSheet(1);
 
 		try (FileOutputStream out = new FileOutputStream(fileName)) {
 			wb.write(out);
@@ -248,7 +250,7 @@ public class Generator {
 		i++;
 		cell = Util.getOrCreateCell(row, i);//row.createCell(i++, CellType.FORMULA);
 		//cell.setCellFormula("VLOOKUP(" + match.getEquipeA().getNumero() + ",A3:C43,3,FALSE)");
-		cell.setCellType(CellType.FORMULA);
+		//cell.setCellType(CellType.FORMULA);
 		searchFormulaTeamNames(rangeTeamName, cell, "B");
 		cell.setCellStyle(rowModel.getCell(i).getCellStyle());
 		
@@ -315,6 +317,11 @@ public class Generator {
 				cell = Util.getOrCreateCell(row, i);
 				searchFormulaTeamAdv(cell, teamRange, numeroPartie, numRow, "D", nbPartie);
 			}
+			
+			i++;
+			cell = Util.getOrCreateCell(row, i);
+			cell.setCellFormula("IF(ISERROR(FIND(CONCATENATE(\" \",B" + excelRowNumber + ", \"-\"),L" + excelRowNumber + ")),\"\",\"DEJA JOUE\")");
+			
 		}
 		
 		
@@ -356,7 +363,9 @@ public class Generator {
 		StringBuilder formula = new StringBuilder("CONCATENATE(");
 		for (int iPartie = 1; iPartie < numeroPartie; iPartie++) {
 			if (iPartie > 0) {
-				formula.append(", ");
+				formula.append(", \"  \", ");
+			} else {
+				formula.append("\"  \", ");
 			}
 			formula.append(buildFormulaTeamAdv(plageEquipeAdverse, columnEquipe + (numRow + 1) , 19 + iPartie));
 			formula.append(", \"-\"");
@@ -528,8 +537,6 @@ public class Generator {
 	 * @return
 	 */
 	private Row writeHeaderInSheetEquipe(Sheet sheet, Row rowModel) {
-		// 3 ou 4 colonnes colonnes ({ordre}/equipe/nom1/Nom2)  + 2 colonnes par partie
-		int numCellSum = firstColumnPartieInSheetTeam + concours.getParties().size() * 2;
 		
 		Row row = sheet.createRow(rowModel.getRowNum()+1);
 		row.setHeight(rowModel.getHeight());
@@ -556,15 +563,27 @@ public class Generator {
 			}
 		}
 		
-		// Les totaux : 3 cellules à créées
+		// Les totaux : // 3 ou 4 colonnes colonnes ({ordre}/equipe/nom1/Nom2)  + 2 colonnes par partie
 		// la feuille modele à 6 partie
 		int firstIndexCellInRowModel = firstColumnPartieInSheetTeam + 6 * 2;
-		for (int numCell = 0; numCell < 3; numCell++) {
+		int numCellSum = firstColumnPartieInSheetTeam + concours.getParties().size() * 2;
+		// Parties Gagnées, PP, PC, DIFF
+		for (int numCell = 0; numCell < 4; numCell++) {
 			Cell cellEntete = row.createCell(numCellSum + numCell);
 			Cell cellModel = Util.getOrCreateCell(rowModel, firstIndexCellInRowModel + numCell);
 			cellEntete.setCellValue(cellModel.getStringCellValue());
 			cellEntete.setCellStyle(cellModel.getCellStyle());
 		}
+		// Adversaire
+		numCellSum = numCellSum + 3;
+		for(int iPartie = 1;iPartie <= concours.getParties().size();iPartie++) {
+			Cell cellEntete = row.createCell(numCellSum + iPartie);
+			Cell cellModel = Util.getOrCreateCell(rowModel, firstIndexCellInRowModel + 3);
+			cellEntete.setCellValue(cellModel.getStringCellValue());
+			cellEntete.setCellStyle(cellModel.getCellStyle());
+			cellEntete.setCellValue("Adv" + iPartie);
+		}
+		
 		
 		return row;
 	}
