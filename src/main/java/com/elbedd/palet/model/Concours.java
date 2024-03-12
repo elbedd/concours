@@ -33,14 +33,24 @@ public class Concours {
 		return equipes;
 	}
 
+	
+	
 	public void effectueTirageQualification() {
+		effectueTirageQualification(nbPartieQualificative);
+	}
+
+	public void effectueTirageQualification(int nbPartie) {
 		parties = new ArrayList<Partie>();
-		for (int i = 0; i < nbPartieQualificative; i++) {
-			Partie tirage = Partie.effectueTirage(i + 1, equipes, parties);
+		for (int i = 1; i <= nbPartieQualificative; i++) {
+			Partie tirage = Partie.effectueTirage(i, equipes, parties, i <= nbPartie );
 			tirage.display();
 			parties.add(tirage);
 		}
-
+//		for (int i = nbPartie + 1; i <= this.nbPartieQualificative; i++) {
+//			Partie tirage = new Partie(i);
+//			parties.add(tirage);
+//			nbPartie++;
+//		}
 	}
 
 	public void display() {
@@ -57,6 +67,25 @@ public class Concours {
 			ret = a != null;
 		}
 		return ret;
+	}
+
+	public void gerePrincipale() {
+
+		
+	}
+	
+	
+	public void calcNbTableau() {
+		int nbTableau;
+		int[] nbEquipeTableau;
+		if (equipes.size() % 32 == 0) {
+			nbTableau = equipes.size() / 32;
+			nbEquipeTableau = new int[1];
+			nbEquipeTableau[0]=32;
+		} else {
+			
+			
+		}
 	}
 
 }

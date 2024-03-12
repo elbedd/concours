@@ -24,6 +24,11 @@ public class Partie {
 		matchs = new ArrayList<Match>();
 		matchsByEquipe = new HashMap<Equipe, Match>();
 	}
+	
+	public Partie(int numero) {
+		this();
+		setNumero(numero);
+	}
 
 	public int getNumero() {
 		return numero;
@@ -83,7 +88,7 @@ public class Partie {
 	}
 
 	public static Partie effectueTirage(int numeroPartie, Map<Integer, Equipe> equipesByNum,
-			List<Partie> tiragePrecedant) {
+			List<Partie> tiragePrecedant, boolean random) {
 		Partie ret = new Partie();
 		ret.setNumero(numeroPartie);
 		List<Equipe> equipeSansMatch = new ArrayList<Equipe>(equipesByNum.values());
@@ -112,7 +117,8 @@ public class Partie {
 		}
 
 		// Recherche si match déjà joué dans une précédante partie
-		if (tiragePrecedant.size() > 0) {
+		//if (numeroPartie<7 && tiragePrecedant.size() > 0) { // Si classement , alors pas besoin d'éviter les doublons
+		if (tiragePrecedant.size() > 0 && random) {
 			List<Match> matchAChanger = new ArrayList<Match>();
 			for (Match match : ret.getMatchs()) {
 				if (matchDejaJoueAvant(tiragePrecedant, match)) {

@@ -14,10 +14,13 @@ import com.elbedd.palet.model.Equipe;
 public class Main {
 
 	public static void main(String[] arg) {
-		int nbPartieQualificative = 5;
-
-		int nbEquipeMin = 10;
+		int nbPartieQualificative = 6;
+		int nbPartieHazard = 2;
+	
+		int nbEquipeMin = 20;
 		int nbEquipeMax = 100;
+		
+		boolean withClassementIntermediaire = true;
 		
 		for (int nbEquipe = nbEquipeMin; nbEquipe <= nbEquipeMax; nbEquipe++) {
 			Concours concours = new Concours(nbPartieQualificative);
@@ -27,7 +30,8 @@ public class Main {
 				concours.addEquipe(equipe);
 			}
 
-			concours.effectueTirageQualification();
+			concours.effectueTirageQualification(nbPartieHazard);
+			// concours.gerePrincipale();
 			//concours.display();
 			Generator generator = new Generator(concours);
 			
@@ -35,7 +39,7 @@ public class Main {
 			numExcel = numExcel.substring(numExcel.length() - 3, numExcel.length());
 			// enregistrer dans un XLS
 			try {
-				generator.generateExcel("d:/temp/tirage/tirage" + numExcel + ".xls");
+				generator.generateExcel("d:/temp/tirage/tirage" + numExcel + ".xls", withClassementIntermediaire, nbPartieHazard);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
