@@ -29,17 +29,20 @@ public class Generator {
 	private final static String REF_SHEET = "!";// In apachePOI ?
 	private final static String REF_RANGE = ":";// In apachePOI ?
 	
+	private final static String SHEET_LIST_NAME = "Liste";
+	private final static int SHEET_LIST_FIRSTLINE = 3;
+	private final static int INDEX_SHEET_LISTE_COLUMN_PALET = 7;
+	
 	private final static String SHEET_TEAM_NAME = "Equipes";
+	private final static String SHEET_CLASSEMENT = "Clt";
 	private final static int SHEET_TEAM_NUMBER = 1;
+	private final static int SHEET_TEAM_FIRSTLINE = 4;
+	
 	
 	private final static String SHEET_PARTIE_NAME = "Partie";
 	private final static int SHEET_PARTIE_NUMBER = 2;
-	
-	private final static String SHEET_CLASSEMENT = "Clt";
-	
-	private final static int SHEET_TEAM_FIRSTLINE = 4;
-	
 	private final static int SHEET_PARTIE_FIRSTLINE = 3;
+	
 	
 	
 	private final static int SCORE_WIN = 11;
@@ -136,8 +139,19 @@ public class Generator {
 				String sheetClassement = SHEET_CLASSEMENT + partie.getNumero();
 				wb.setSheetName(wb.getSheetIndex(classementI), sheetClassement);
 				// pose problème car change formule de Sheet 1.
-				//wb.setSheetOrder(classementI.getSheetName(), partie.getNumero()*2); 
-				
+				//wb.setSheetOrder(classementI.getSheetName(), partie.getNumero()*2);
+				// 7 : numero, joueur1, joueur2, NbWin, PP, PC, DIFF, 
+				// 3* : PP, PC, Num Adversaire
+				final int numCellInfoTeam = 7 + 3*concours.getParties().size();
+				if (partie.getNumero() == concours.getParties().size()) {
+					int lastRow = SHEET_TEAM_FIRSTLINE + concours.getEquipes().size();
+					for(int iRow = SHEET_TEAM_FIRSTLINE; iRow < lastRow;iRow++) {
+						Row row = Util.getOrCreateRow(classementI, iRow);
+						Cell cell = Util.getOrCreateCell(row, numCellInfoTeam);
+						String formula = buildFormulaIndexInListe("A" + (iRow + 1), INDEX_SHEET_LISTE_COLUMN_PALET).toString();
+						cell.setCellFormula(formula);
+					}
+				}
 				//
 				if (partie.getNumero() >= nbPartieHazard) {
 					Sheet sheetPartie = wb.getSheet(SHEET_PARTIE_NAME +  partie.getNumero());
@@ -161,8 +175,8 @@ public class Generator {
 					}
 					
 				}
+				
 			}
-			
 			
 		}
 		
@@ -356,6 +370,14 @@ public class Generator {
 	protected StringBuilder buildFormulaTeamAdv(String rangeEquipe, String cellTeamNumber, int indexPartie) {
 		StringBuilder formula = new StringBuilder();
 		formula.append("VLOOKUP(" + cellTeamNumber + ", " + rangeEquipe + "," + indexPartie + ",FALSE)");
+		return formula;
+	}
+	
+	protected StringBuilder buildFormulaIndexInListe(String cellTeamNumber, int index) {
+		StringBuilder formula = new StringBuilder();
+		int endLine = SHEET_LIST_FIRSTLINE + concours.getEquipes().size();
+		final String rangeEquipe = SHEET_LIST_NAME + "!A" + (SHEET_LIST_FIRSTLINE + 1) + ":G" + endLine;
+		formula.append("VLOOKUP(" + cellTeamNumber + ", " + rangeEquipe + "," + index + ",FALSE)");
 		return formula;
 	}
 	
