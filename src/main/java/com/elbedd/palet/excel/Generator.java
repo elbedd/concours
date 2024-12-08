@@ -44,8 +44,8 @@ public class Generator {
 	private final static int SHEET_PARTIE_FIRSTLINE = 3;
 	
 	
-	
-	private final static int SCORE_WIN = 11;
+	private String CELL_SCORE_WIN = SHEET_TEAM_NAME + "!G1";
+	// private int SCORE_WIN = 11;
 	
 	private int firstColumnPartieInSheetTeam = 3;
 	
@@ -131,11 +131,12 @@ public class Generator {
 		wb.removeSheetAt(SHEET_PARTIE_NUMBER);
 		
 		
-		writeMoreInSheetEquipes(wb, withClassementIntermediaire);
+		writeMoreInSheetEquipes(wb);
 
 		if (withClassementIntermediaire) {
 			for (Partie partie : concours.getParties()) {
 				Sheet classementI = wb.cloneSheet(SHEET_TEAM_NUMBER);
+				replaceConstantByRef(classementI);
 				String sheetClassement = SHEET_CLASSEMENT + partie.getNumero();
 				wb.setSheetName(wb.getSheetIndex(classementI), sheetClassement);
 				// pose problème car change formule de Sheet 1.
@@ -153,8 +154,8 @@ public class Generator {
 					}
 				}
 				//
-				if (partie.getNumero() >= nbPartieHazard) {
-					Sheet sheetPartie = wb.getSheet(SHEET_PARTIE_NAME +  partie.getNumero());
+				if (partie.getNumero() > 1) {
+					Sheet sheetPartie = wb.getSheet(SHEET_PARTIE_NAME + partie.getNumero());
 					//
 					int rowClt = SHEET_TEAM_FIRSTLINE;
 					for (Match match : partie.getMatchs()) {
@@ -163,18 +164,25 @@ public class Generator {
 						Cell TeamA = r.getCell(1);
 						rowClt++;
 						String sheetnameRef = SHEET_CLASSEMENT + (partie.getNumero()-1) + "!A" + rowClt;
-						TeamA.setCellFormula(sheetnameRef);
+						// La formule regarde le nombre de partie aléatoire indiqué dans la feuille Equipe
+						// Si nombre dépassé, alors on va récupéré l'info dans le classement.
+						String formulaCondition = partie.getNumero() + ">"+ SHEET_TEAM_NAME + "!E1";
+						String formulaA = "IF(" + formulaCondition + "," + sheetnameRef + "," + match.getEquipeA().getNumero() + ")";
+						TeamA.setCellFormula(formulaA);
 
 						if (match.getEquipeB()!=null) {
 							Cell TeamB = r.getCell(3);
 							rowClt++;
 							sheetnameRef = SHEET_CLASSEMENT + (partie.getNumero()-1) + "!A" + rowClt;
-							TeamB.setCellFormula(sheetnameRef);
+							String formulaB = "IF(" + formulaCondition + "," + sheetnameRef + "," + match.getEquipeB().getNumero() + ")";
+							TeamB.setCellFormula(formulaB);
 						}
 						
 					}
-					
 				}
+				
+					
+				//}
 				
 			}
 			
@@ -191,6 +199,18 @@ public class Generator {
 		wb.close();
 	}
 
+	/**
+	 * Remplace l'information dupliqué de la feuille Equipe
+	 * Par une formule qui récupère la valeur de la cellule (devient dynamique)
+	 */
+	private void replaceConstantByRef(Sheet classementI) {
+		Row headerRow = Util.getOrCreateRow(classementI, 0);
+		for (int cellnum = 0; cellnum < 10;) {
+			Cell cell = Util.getOrCreateCell(headerRow, cellnum);
+			String columnLetter = Util.getColumnLetter(++cellnum);
+			cell.setCellFormula(SHEET_TEAM_NAME + REF_SHEET + columnLetter + "1");
+		}
+	}
 	private String computeTeamRange(String firstColumn, String lastComumn, int nbTeam) {
 		String referenceStart = SHEET_TEAM_NAME + REF_SHEET + firstColumn+ (SHEET_TEAM_FIRSTLINE + 1);
 		int lastLine = SHEET_TEAM_FIRSTLINE + nbTeam;
@@ -389,7 +409,8 @@ public class Generator {
 			} else {
 				formula.append("\"  \", ");
 			}
-			formula.append(buildFormulaTeamAdv(plageEquipeAdverse, columnEquipe + (numRow + 1) , 19 + iPartie));
+			// 7: colonnes :Equipe, Joueurs (2), PG, PP, PC, Diff
+			formula.append(buildFormulaTeamAdv(plageEquipeAdverse, columnEquipe + (numRow + 1) , nbPartie*2 + 7 + iPartie));
 			formula.append(", \"-\"");
 		}
 		formula.append(")");
@@ -465,9 +486,20 @@ public class Generator {
 		
 	}
 	
-	private void writeMoreInSheetEquipes(Workbook wb, boolean classementIntermediaire) {
+	private void writeMoreInSheetEquipes(Workbook wb) {
 		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
 		
+		// Nombre de partie aux hasards gérés
+		Row row0 = sheet.getRow(0);
+		Cell cellRandom = Util.getOrCreateCell(row0, 4);
+		cellRandom.setCellValue(3);	// Par defaut
+		cellRandom = Util.getOrCreateCell(row0, 5);
+		cellRandom.setCellValue("au hasard");
+		
+		cellRandom = Util.getOrCreateCell(row0, 6);
+		cellRandom.setCellValue(11);	// Par defaut
+		cellRandom = Util.getOrCreateCell(row0, 7);
+		cellRandom.setCellValue("Points Gagnant");
 		// On recopie la ligne 3 de l'excel en ajustant de 6 à nbPartie.
 		
 		Row rowModel = Util.getOrCreateRow(sheet, 2);// Ligne 3
@@ -511,7 +543,7 @@ public class Generator {
 			StringBuilder sbContre = new StringBuilder("");
 			
 			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
-				sbWin.append("+IF(" + tabLettre[indexLettre] + numLigne + "<" + SCORE_WIN +",0,1)");
+				sbWin.append("+IF(" + tabLettre[indexLettre] + numLigne + "<" + CELL_SCORE_WIN +",0,1)");
 				sbPour.append("+" +tabLettre[indexLettre] + numLigne);
 				indexLettre ++;
 				sbContre.append("+" +tabLettre[indexLettre] + numLigne);

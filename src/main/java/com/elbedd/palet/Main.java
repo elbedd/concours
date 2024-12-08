@@ -15,10 +15,12 @@ public class Main {
 
 	public static void main(String[] arg) {
 		int nbPartieQualificative = 6;
-		int nbPartieHazard = 2;
+		// Le nombre de partie aux hasard : mettre le maxumim. Peut etre généré dans l'excel
+		int nbPartieHazard = nbPartieQualificative;
 	
-		int nbEquipeMin = 20;
-		int nbEquipeMax = 100;
+		int nbEquipeMin = 8;
+		int nbEquipeMax = 80;
+		// int scoreToWin = 11;
 		
 		boolean withClassementIntermediaire = true;
 		
@@ -33,7 +35,7 @@ public class Main {
 			concours.effectueTirageQualification(nbPartieHazard);
 			// concours.gerePrincipale();
 			//concours.display();
-			Generator generator = new Generator(concours);
+			Generator generator = new Generator(concours, false);
 			
 			String numExcel = "000" + nbEquipe;
 			numExcel = numExcel.substring(numExcel.length() - 3, numExcel.length());

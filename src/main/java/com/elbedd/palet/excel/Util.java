@@ -37,4 +37,14 @@ public class Util {
 		return ret;
 		
 	}
+	
+	public static String getColumnLetter(int columnIndex) {
+        StringBuilder columnLetter = new StringBuilder();
+        while (columnIndex >= 0) {
+            int remainder = columnIndex % 26;
+            columnLetter.insert(0, (char) (remainder + 'A'));
+            columnIndex = (columnIndex / 26) - 1;
+        }
+        return columnLetter.toString();
+    }
 }
