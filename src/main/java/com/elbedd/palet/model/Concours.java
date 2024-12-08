@@ -42,7 +42,8 @@ public class Concours {
 	public void effectueTirageQualification(int nbPartie) {
 		parties = new ArrayList<Partie>();
 		for (int i = 1; i <= nbPartieQualificative; i++) {
-			Partie tirage = Partie.effectueTirage(i, equipes, parties, i <= nbPartie );
+			//Partie tirage = Partie.effectueTirage(i, equipes, parties, i <= nbPartie );
+			Partie tirage = Partie.effectueTirage(i, equipes, parties, true);
 			tirage.display();
 			parties.add(tirage);
 		}
