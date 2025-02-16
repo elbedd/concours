@@ -41,7 +41,7 @@ public class Main {
 			numExcel = numExcel.substring(numExcel.length() - 3, numExcel.length());
 			// enregistrer dans un XLS
 			try {
-				generator.generateExcel("d:/temp/tirage/tirage" + numExcel + ".xls", withClassementIntermediaire, nbPartieHazard);
+				generator.generateExcel("c:/temp/tirage/tirage" + numExcel + ".xls", withClassementIntermediaire, nbPartieHazard);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
