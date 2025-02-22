@@ -37,12 +37,16 @@ public class Generator {
 	private final static String SHEET_CLASSEMENT = "Clt";
 	private final static int SHEET_TEAM_NUMBER = 1;
 	private final static int SHEET_TEAM_FIRSTLINE = 4;
-	
+	// 8: colonnes fixe : Equipe, Joueurs (2), PG, PP, PC, Diff, Tableau
+	private final static int SHEET_TEAM_NB_COLUMN_FIXE = 8;
 	
 	private final static String SHEET_PARTIE_NAME = "Partie";
 	private final static int SHEET_PARTIE_NUMBER = 2;
 	private final static int SHEET_PARTIE_FIRSTLINE = 3;
 	
+	private final static String[] TAB_LETTRE = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R","S","T","U","V","W","X","Y","Z"
+			, "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR","AS","AT","AU","AV","AW","AX","AY","AZ"
+			};
 	
 	private String CELL_SCORE_WIN = SHEET_TEAM_NAME + "!G1";
 	// private int SCORE_WIN = 11;
@@ -92,10 +96,10 @@ public class Generator {
 	 * @param fileName
 	 * @throws Exception
 	 */
-	public void generateExcel(String fileName) throws Exception {
-		generateExcel(fileName, false, this.concours.getParties().size());
+	public void generateExcel(String fileName, int nbWinningPoint) throws Exception {
+		generateExcel(fileName, false, this.concours.getParties().size(), nbWinningPoint);
 	 }
-	public void generateExcel(String fileName, boolean withClassementIntermediaire, int nbPartieHazard) throws Exception {
+	public void generateExcel(String fileName, boolean withClassementIntermediaire, int nbPartieHazard, int nbWinningPoint) throws Exception {
 		Workbook wb = loadModeleExcel();
 		
 		//setGrayStyleSheetFromWb(wb);
@@ -111,7 +115,7 @@ public class Generator {
 		} else {
 			plageEquipeName = computeTeamRange("A", "C", concours.getEquipes().size());
 			// W : 6 match (Colonne 6 + 6*2 match +4)
-			plageEquipeAdverse = computeTeamRange("A", "X", concours.getEquipes().size());
+			plageEquipeAdverse = computeTeamRange("A", "Z", concours.getEquipes().size());
 		}
 		
 		
@@ -131,7 +135,7 @@ public class Generator {
 		wb.removeSheetAt(SHEET_PARTIE_NUMBER);
 		
 		
-		writeMoreInSheetEquipes(wb);
+		writeMoreInSheetEquipes(wb, nbWinningPoint);
 
 		if (withClassementIntermediaire) {
 			for (Partie partie : concours.getParties()) {
@@ -139,11 +143,11 @@ public class Generator {
 				replaceConstantByRef(classementI);
 				String sheetClassement = SHEET_CLASSEMENT + partie.getNumero();
 				wb.setSheetName(wb.getSheetIndex(classementI), sheetClassement);
+				writeNumFeuilleClassement(classementI, partie.getNumero());
 				// pose problème car change formule de Sheet 1.
-				//wb.setSheetOrder(classementI.getSheetName(), partie.getNumero()*2);
-				// 7 : numero, joueur1, joueur2, NbWin, PP, PC, DIFF, 
+				//wb.setSheetOrder(classementI.getSheetName(), partie.getNumero()*2); 
 				// 3* : PP, PC, Num Adversaire
-				final int numCellInfoTeam = 7 + 3*concours.getParties().size();
+				final int numCellInfoTeam = SHEET_TEAM_NB_COLUMN_FIXE + 3*concours.getParties().size();
 				if (partie.getNumero() == concours.getParties().size()) {
 					int lastRow = SHEET_TEAM_FIRSTLINE + concours.getEquipes().size();
 					for(int iRow = SHEET_TEAM_FIRSTLINE; iRow < lastRow;iRow++) {
@@ -205,9 +209,9 @@ public class Generator {
 	 */
 	private void replaceConstantByRef(Sheet classementI) {
 		Row headerRow = Util.getOrCreateRow(classementI, 0);
-		for (int cellnum = 0; cellnum < 10;) {
+		for (int cellnum = 0; cellnum < 10;cellnum++) {
 			Cell cell = Util.getOrCreateCell(headerRow, cellnum);
-			String columnLetter = Util.getColumnLetter(++cellnum);
+			String columnLetter = Util.getColumnLetter(cellnum);
 			cell.setCellFormula(SHEET_TEAM_NAME + REF_SHEET + columnLetter + "1");
 		}
 	}
@@ -411,8 +415,7 @@ public class Generator {
 			} else {
 				formula.append("\"  \", ");
 			}
-			// 7: colonnes :Equipe, Joueurs (2), PG, PP, PC, Diff
-			formula.append(buildFormulaTeamAdv(plageEquipeAdverse, columnEquipe + (numRow + 1) , nbPartie*2 + 7 + iPartie));
+			formula.append(buildFormulaTeamAdv(plageEquipeAdverse, columnEquipe + (numRow + 1) , nbPartie*2 + SHEET_TEAM_NB_COLUMN_FIXE + iPartie));
 			formula.append(", \"-\"");
 		}
 		formula.append(")");
@@ -489,24 +492,40 @@ public class Generator {
 		
 	}
 	
-	private void writeMoreInSheetEquipes(Workbook wb) {
+	private void writeMoreInSheetEquipes(Workbook wb, int nbWinningPoints) {
 		Sheet sheet = wb.getSheet(SHEET_TEAM_NAME);
-
+		
+		writeNumFeuilleClassement(sheet, 0);
+		
 		// Nombre de partie aux hasards gérés
 		Row row0 = sheet.getRow(0);
 		Cell cellRandom = Util.getOrCreateCell(row0, 4);
 		cellRandom.setCellValue(3);	// Par defaut
-		cellRandom = Util.getOrCreateCell(row0, 5);
-		cellRandom.setCellValue("au hasard");
+		Cell cellRandomLabel = Util.getOrCreateCell(row0, 5);
+		cellRandomLabel.setCellValue("au hasard");
 		
-		cellRandom = Util.getOrCreateCell(row0, 6);
-		cellRandom.setCellValue(11);	// Par defaut
-		cellRandom = Util.getOrCreateCell(row0, 7);
-		cellRandom.setCellValue("Points Gagnant");
+		Cell cellWinPoint = Util.getOrCreateCell(row0, 6);
+		cellWinPoint.setCellValue(nbWinningPoints);	// Par defaut, sera changeable dans l'excel
+		Cell cellWinPointLabel = Util.getOrCreateCell(row0, 7);
+		cellWinPointLabel.setCellValue("Points Gagnant");
+		
+		// J1 = Parties quaificatives au tableau 1 (0=Pas de tableau), K1 = Label
+		Cell cellTableau1 = Util.getOrCreateCell(row0, 8);
+		cellTableau1.setCellValue(3);
+		Cell cellTableau1Label = Util.getOrCreateCell(row0, 7);
+		cellTableau1Label.setCellValue("Nb partie avant Tableau");
+		
 		// On recopie la ligne 3 de l'excel en ajustant de 6 à nbPartie.
 		Row rowModel = Util.getOrCreateRow(sheet, 2);// Ligne 3
 		Row rowHeader = writeHeaderInSheetEquipe(sheet, rowModel);
 		sheet.removeRow(rowModel);
+		
+		
+		int indexColonneTableau = SHEET_TEAM_NB_COLUMN_FIXE + 2 * concours.getParties().size() -1;
+		int indexColonneEnd = indexColonneTableau + concours.getParties().size();
+		String startPlageEquipe = "$A$" + (SHEET_TEAM_FIRSTLINE+1);
+		String endPlageEquipe = "$"+ TAB_LETTRE[indexColonneEnd] +"$" + (SHEET_TEAM_FIRSTLINE + concours.getEquipes().size());
+		String plageEquipe = startPlageEquipe + ":" +  endPlageEquipe;
 		
 		for (Equipe equipe : concours.getEquipes().values()) {
 			int numLigne = SHEET_TEAM_FIRSTLINE + equipe.getNumero();	
@@ -534,8 +553,6 @@ public class Generator {
 			// Faire le nombre de victoire 
 			// Si 5 partie : 
 			//  =SI(D4<11;0;1)+SI(F4<11;0;1)+SI(H4<11;0;1)+SI(J4<11;0;1)+SI(L4<11;0;1)
-			char[] tabLettre = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P','Q','R' ,'S','T','U','V','W','X','Y','Z'};
-
 			int indexLettre = 3;
 			if (tableauFinale) {
 				indexLettre++;
@@ -546,10 +563,10 @@ public class Generator {
 			StringBuilder sbContre = new StringBuilder("");
 			
 			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
-				sbWin.append("+IF(" + tabLettre[indexLettre] + numLigne + "<" + CELL_SCORE_WIN +",0,1)");
-				sbPour.append("+" +tabLettre[indexLettre] + numLigne);
+				sbWin.append("+IF(" + TAB_LETTRE[indexLettre] + numLigne + "<" + CELL_SCORE_WIN +",0,1)");
+				sbPour.append("+" +TAB_LETTRE[indexLettre] + numLigne);
 				indexLettre ++;
-				sbContre.append("+" +tabLettre[indexLettre] + numLigne);
+				sbContre.append("+" +TAB_LETTRE[indexLettre] + numLigne);
 				indexLettre ++;
 			}
 			
@@ -573,8 +590,15 @@ public class Generator {
 			indexLettre ++;
 			
 			Cell cellDiff = row.createCell(numCell++, CellType.FORMULA);
-			cellDiff.setCellFormula("" + tabLettre[indexLettre - 2]+ numLigne + "-" + tabLettre[indexLettre - 1]+ numLigne);
+			cellDiff.setCellFormula("" + TAB_LETTRE[indexLettre - 2]+ numLigne + "-" + TAB_LETTRE[indexLettre - 1]+ numLigne);
 			cellDiff.setCellStyle(rowHeader.getCell(cellPC.getColumnIndex()).getCellStyle());
+			
+			// 1 colonne pour le tableau (Pas de tableau = prinicpale = 0, consolante=1, ...)
+			Cell cellTeableau = row.createCell(numCell++, CellType.FORMULA);
+			//cellTeableau.setCellFormula("" + tabLettre[indexLettre - 2]+ numLigne + "-" + tabLettre[indexLettre - 1]+ numLigne);
+			cellTeableau.setCellFormula(searchFormulaTableau(equipe, plageEquipe, indexColonneTableau));
+			
+			cellTeableau.setCellStyle(rowHeader.getCell(cellPC.getColumnIndex()).getCellStyle());
 			
 			// 1 colonne par Adversaire
 			for (int iPartie = 0; iPartie < concours.getParties().size(); iPartie++) {
@@ -586,6 +610,20 @@ public class Generator {
 			
 		}
 		
+	}
+
+	/**
+	 * En ligne 2, numero de la feuille (0 pour equipe, 1 pour Clt1,..)
+	 * @param sheet
+	 * @param i
+	 */
+	
+	private void writeNumFeuilleClassement(Sheet sheet, int numeroPartie) {
+		Row row = sheet.getRow(1);
+		Cell cellRandomLabel = Util.getOrCreateCell(row, 0);
+		cellRandomLabel.setCellValue("numero classement");
+		Cell cellRandom= Util.getOrCreateCell(row, 1);
+		cellRandom.setCellValue(numeroPartie);
 	}
 
 	/**
@@ -624,6 +662,7 @@ public class Generator {
 		// la feuille modele à 6 partie
 		int firstIndexCellInRowModel = firstColumnPartieInSheetTeam + 6 * 2;
 		int numCellSum = firstColumnPartieInSheetTeam + concours.getParties().size() * 2;
+		
 		// Parties Gagnées, PP, PC, DIFF
 		for (int numCell = 0; numCell < 4; numCell++) {
 			Cell cellEntete = row.createCell(numCellSum + numCell);
@@ -631,8 +670,15 @@ public class Generator {
 			cellEntete.setCellValue(cellModel.getStringCellValue());
 			cellEntete.setCellStyle(cellModel.getCellStyle());
 		}
+		numCellSum = numCellSum + 4;
+		
+		// Tableau
+		Cell cellEnteteTableau = row.createCell(numCellSum);
+		Cell cellModelTableau = Util.getOrCreateCell(rowModel, firstIndexCellInRowModel + 1);
+		cellEnteteTableau.setCellStyle(cellModelTableau.getCellStyle());
+		cellEnteteTableau.setCellValue("Tableau");
+		
 		// Adversaire
-		numCellSum = numCellSum + 3;
 		for(int iPartie = 1;iPartie <= concours.getParties().size();iPartie++) {
 			Cell cellEntete = row.createCell(numCellSum + iPartie);
 			Cell cellModel = Util.getOrCreateCell(rowModel, firstIndexCellInRowModel + 3);
@@ -715,6 +761,26 @@ public class Generator {
 		formula.append(")"); // END IF
 		
 		return formula.toString();
+	}
+	
+	
+	/**
+	 * Construit formule qui renvoie le tableau à l'issue de la Xeme Partie
+	 * @param equipe Numéro de l'équipe dont on cherche l'adversaire
+	 * @return
+	 */
+	protected String searchFormulaTableau(Equipe equipe, String plageEquipe, int indexColonneTableau) {
+		String columnNumberInTeam = "A";
+		
+		String cellSearched = columnNumberInTeam + (SHEET_TEAM_FIRSTLINE + equipe.getNumero()); 
+		
+		String FeuilleCltTableau = "INDIRECT(\"" + SHEET_CLASSEMENT + "\"&$I$1&" +  "\"" + REF_SHEET + plageEquipe + "\")" ;
+		
+		String formuleTableauFeuille = "VLOOKUP(" + cellSearched + "," + FeuilleCltTableau + ","+ (indexColonneTableau + 1 )+",FALSE)";
+		
+		String formule = "IF($B$2=$H$1,0,"+formuleTableauFeuille+")";
+		
+		return formule;
 	}
 	
 

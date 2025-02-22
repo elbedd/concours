@@ -18,9 +18,9 @@ public class Main {
 		// Le nombre de partie aux hasard : mettre le maxumim. Peut etre généré dans l'excel
 		int nbPartieHazard = nbPartieQualificative;
 	
-		int nbEquipeMin = 8;
-		int nbEquipeMax = 80;
-		// int scoreToWin = 11;
+		int nbEquipeMin = 20;
+		int nbEquipeMax = 70;
+		int nbWinningPointDefault = 13;
 		
 		boolean withClassementIntermediaire = true;
 		
@@ -41,7 +41,7 @@ public class Main {
 			numExcel = numExcel.substring(numExcel.length() - 3, numExcel.length());
 			// enregistrer dans un XLS
 			try {
-				generator.generateExcel("c:/temp/tirage/tirage" + numExcel + ".xls", withClassementIntermediaire, nbPartieHazard);
+				generator.generateExcel("c:/temp/tirage/tirage" + numExcel + ".xls", withClassementIntermediaire, nbPartieHazard, nbWinningPointDefault);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
