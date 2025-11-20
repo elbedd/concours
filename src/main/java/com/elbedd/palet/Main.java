@@ -18,8 +18,8 @@ public class Main {
 		// Le nombre de partie aux hasard : mettre le maxumim. Peut etre généré dans l'excel
 		int nbPartieHazard = nbPartieQualificative;
 	
-		int nbEquipeMin = 20;
-		int nbEquipeMax = 70;
+		int nbEquipeMin = 12;
+		int nbEquipeMax = 25;
 		int nbWinningPointDefault = 13;
 		
 		boolean withClassementIntermediaire = true;

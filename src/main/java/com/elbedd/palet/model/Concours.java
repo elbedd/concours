@@ -39,11 +39,10 @@ public class Concours {
 		effectueTirageQualification(nbPartieQualificative);
 	}
 
-	public void effectueTirageQualification(int nbPartie) {
+	public void effectueTirageQualification(int nbPartieHasard) {
 		parties = new ArrayList<Partie>();
 		for (int i = 1; i <= nbPartieQualificative; i++) {
-			//Partie tirage = Partie.effectueTirage(i, equipes, parties, i <= nbPartie );
-			Partie tirage = Partie.effectueTirage(i, equipes, parties, true);
+			Partie tirage = Partie.effectueTirage(i, equipes, parties, i <= nbPartieHasard );
 			tirage.display();
 			parties.add(tirage);
 		}
