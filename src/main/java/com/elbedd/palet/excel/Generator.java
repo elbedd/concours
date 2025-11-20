@@ -115,7 +115,11 @@ public class Generator {
 		} else {
 			plageEquipeName = computeTeamRange("A", "C", concours.getEquipes().size());
 			// W : 6 match (Colonne 6 + 6*2 match +4)
-			plageEquipeAdverse = computeTeamRange("A", "Z", concours.getEquipes().size());
+			//  = 3 + concours.getParties().size()*2 + 5 + concours.getParties().size()-1;
+			//  = 3 + 2x + 5 +x - 1 = 3x +7
+			int lastColumnSheetEquipeIndex = 3 * concours.getParties().size() + 7;
+			String lastColumn = Util.getColumnLetter(lastColumnSheetEquipeIndex);
+			plageEquipeAdverse = computeTeamRange("A", lastColumn, concours.getEquipes().size());
 		}
 		
 		
